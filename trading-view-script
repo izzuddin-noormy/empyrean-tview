@@ -1,0 +1,1004 @@
+//@version=5
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//***************GUIDE***********************************
+//CPR - Applicable only for daily pivots
+//CPR S/R - All 3 S/R levels are disabled by default
+//CPR Pivot - Central Pivot is a Red line by default and it's color can be changed from the settings
+//CPR TC and BC - Top Range & Bottom Range. Both are Blue by default and can be changed from the settings
+//Daily Pivots - Daily S1, S2, S3 and R1, R2, R3 are enabled by default. S4 and R4 can be enabled as per the need.
+//Daily Pivots - Resistance(R) lines are Red in colour by default
+//Daily Pivots - Support(S) lines are Green in colour by default
+
+//Weekly Pivots - Pivot is Blue in color by default
+//Weekly Pivots - 4 levels provided - S1/R1, S2/R2, S3/R3/ S4/R4. Disabled by default. Can be enabled from the settings.
+//Weekly Pivots - Resistance(R) lines are Red in color by default
+//Weekly Pivots - Support(S) lines are Green in color by default
+
+//Monthly Pivots - Pivot is Blue in color by default
+//Monthly Pivots - 3 levels provided - S1/R1, S2/R2, S3/R3. Disabled by default. Can be enabled from the settings.
+//Monthly Pivots - Resistance(R) lines are Red in color by default
+//Monthly Pivots - Support(S) lines are Green in color by default
+
+//Tomorrow Pivots - Central Pivot is Red in color by default
+//Tomorrow TC and BC - Top Range & Bottom Range. Both are Blue by default and can be changed from the settings
+//Tomorrow Pivots - Resistance(R) lines are Red in color by default
+//Tomorrow Pivots - Support(S) lines are Green in color by default
+
+//Previous Day High (PDH) and Previous Day Low (PDL) is also provided.
+
+//Simple Moving Average - 3 SMAs are provided because in general all the strategies can be built using the 20MA, 50MA and 200MA.
+
+//VWAP - Volume Weighted Average Price is also provided for the convenience of the user. Can be useful in case of Futures.
+
+// Hull Ribbon for trend identification
+
+// Coloured volume candles to determine the strenngth of the trend
+
+
+//indicator('Empyrean Fund™ - Adaptive Algorithm', overlay=true, shorttitle='Empyrean Fund™ - Adaptive Algorithm', max_bars_back = 400)
+strategy(title='Empyrean Fund™ - Strange Algorithm', overlay=true, max_bars_back = 400, process_orders_on_close=true, margin_long = 100, margin_short = 100, initial_capital=100000000, default_qty_value=100)
+//******************CALCULATIONS**************************
+//Central Pivot Range
+pivot = (high + low + close) / 3  //Central Povit
+BC = (high + low) / 2  //Below Central povit
+TC = pivot - BC + pivot  //Top Central povot
+
+//3  support levels
+S1 = pivot * 2 - high
+S2 = pivot - (high - low)
+S3 = low - 2 * (high - pivot)
+S4 = low - 3 * (high - pivot)
+
+//3  resistance levels
+R1 = pivot * 2 - low
+R2 = pivot + high - low
+R3 = high + 2 * (pivot - low)
+R4 = high + 3 * (pivot - low)
+
+//Checkbox inputs
+CPRPlot = input(title='Show Daily CPR', defval=true)
+DayS1R1 = input(title='Show Daily S1/R1', defval=false)
+DayS2R2 = input(title='Show Daily S2/R2', defval=false)
+DayS3R3 = input(title='Show Daily S3/R3', defval=false)
+DayS4R4 = input(title='Show Daily S4/R4', defval=false)
+
+WeeklyPivotInclude = input(title='Show Weekly Pivot', defval=false)
+WeeklyS1R1 = input(title='Show Weekly S1/R1', defval=false)
+WeeklyS2R2 = input(title='Show Weekly S2/R2', defval=false)
+WeeklyS3R3 = input(title='Show Weekly S3/R3', defval=false)
+WeeklyS4R4 = input(title='Show Weekly S4/R4', defval=false)
+
+MonthlyPivotInclude = input(title='Show Monthly Pivot', defval=false)
+MonthlyS1R1 = input(title='Show Monthly S1/R1', defval=false)
+MonthlyS2R2 = input(title='Show Monthly S2/R2', defval=false)
+MonthlyS3R3 = input(title='Show Monthly S3/R3', defval=false)
+
+//******************DAYWISE CPR & PIVOTS**************************
+// Getting daywise CPR
+DayPivot = request.security(syminfo.tickerid, 'D', pivot[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayBC = request.security(syminfo.tickerid, 'D', BC[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayTC = request.security(syminfo.tickerid, 'D', TC[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks daywise for CPR
+CPColour = DayPivot != DayPivot[1] ? color.red : color.red
+BCColour = DayBC != DayBC[1] ? color.blue : color.blue
+TCColour = DayTC != DayTC[1] ? color.blue : color.blue
+
+//Plotting daywise CPR
+plot(DayPivot, title='Daily Pivot', style=plot.style_circles, color=color.new(color.red, 0), linewidth=2)
+plot(CPRPlot ? DayBC : na, title='Daily BC', style=plot.style_circles, color=#4ED0E1, linewidth=2)
+plot(CPRPlot ? DayTC : na, title='Daily TC', style=plot.style_circles, color=#f2b91c, linewidth=2)
+
+// Getting daywise Support levels
+DayS1 = request.security(syminfo.tickerid, 'D', S1[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayS2 = request.security(syminfo.tickerid, 'D', S2[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayS3 = request.security(syminfo.tickerid, 'D', S3[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayS4 = request.security(syminfo.tickerid, 'D', S4[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for daywise Support levels 
+DayS1Color = DayS1 != DayS1[1] ? color.green : color.green
+DayS2Color = DayS2 != DayS2[1] ? color.green : color.green
+DayS3Color = DayS3 != DayS3[1] ? color.green : color.green
+DayS4Color = DayS4 != DayS4[1] ? color.green : color.green
+
+//Plotting daywise Support levels
+plot(DayS1R1 ? DayS1 : na, title='Daily S1', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(DayS2R2 ? DayS2 : na, title='Daily S2', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(DayS3R3 ? DayS3 : na, title='Daily S3', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(DayS4R4 ? DayS4 : na, title='Daily S4', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+
+// Getting daywise Resistance levels
+DayR1 = request.security(syminfo.tickerid, 'D', R1[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayR2 = request.security(syminfo.tickerid, 'D', R2[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayR3 = request.security(syminfo.tickerid, 'D', R3[1], barmerge.gaps_off, barmerge.lookahead_on)
+DayR4 = request.security(syminfo.tickerid, 'D', R4[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for daywise Support levels
+DayR1Color = DayR1 != DayR1[1] ? color.red : color.red
+DayR2Color = DayR2 != DayR2[1] ? color.red : color.red
+DayR3Color = DayR3 != DayR3[1] ? color.red : color.red
+DayR4Color = DayR4 != DayR4[1] ? color.red : color.red
+
+//Plotting daywise Resistance levels
+plot(DayS1R1 ? DayR1 : na, title='Daily R1', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(DayS2R2 ? DayR2 : na, title='Daily R2', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(DayS3R3 ? DayR3 : na, title='Daily R3', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(DayS4R4 ? DayR4 : na, title='Daily R4', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+
+//******************WEEKLY PIVOTS**************************
+
+// Getting Weely Pivot
+WPivot = request.security(syminfo.tickerid, 'W', pivot[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for Weely Pivot 
+WeeklyPivotColor = WPivot != WPivot[1] ? na : color.blue
+
+//Plotting Weely Pivot
+plot(WeeklyPivotInclude ? WPivot : na, title='Weekly Pivot', style=plot.style_circles, linewidth=1)
+
+
+// Getting Weekly Support levels
+WS1 = request.security(syminfo.tickerid, 'W', S1[1], barmerge.gaps_off, barmerge.lookahead_on)
+WS2 = request.security(syminfo.tickerid, 'W', S2[1], barmerge.gaps_off, barmerge.lookahead_on)
+WS3 = request.security(syminfo.tickerid, 'W', S3[1], barmerge.gaps_off, barmerge.lookahead_on)
+WS4 = request.security(syminfo.tickerid, 'W', S4[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for weekly Support levels
+WS1Color = WS1 != WS1[1] ? color.green : color.green
+WS2Color = WS2 != WS2[1] ? color.green : color.green
+WS3Color = WS3 != WS3[1] ? color.green : color.green
+WS4Color = WS4 != WS4[1] ? color.green : color.green
+
+//Plotting Weekly Support levels
+plot(WeeklyS1R1 ? WS1 : na, title='Weekly S1', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(WeeklyS2R2 ? WS2 : na, title='Weekly S2', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(WeeklyS3R3 ? WS3 : na, title='Weekly S3', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(WeeklyS4R4 ? WS4 : na, title='Weekly S4', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+
+// Getting Weekly Resistance levels
+WR1 = request.security(syminfo.tickerid, 'W', R1[1], barmerge.gaps_off, barmerge.lookahead_on)
+WR2 = request.security(syminfo.tickerid, 'W', R2[1], barmerge.gaps_off, barmerge.lookahead_on)
+WR3 = request.security(syminfo.tickerid, 'W', R3[1], barmerge.gaps_off, barmerge.lookahead_on)
+WR4 = request.security(syminfo.tickerid, 'W', R4[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for weekly Resistance levels
+WR1Color = WR1 != WR1[1] ? color.red : color.red
+WR2Color = WR2 != WR2[1] ? color.red : color.red
+WR3Color = WR3 != WR3[1] ? color.red : color.red
+WR4Color = WR4 != WR4[1] ? color.red : color.red
+
+//Plotting Weekly Resistance levels
+plot(WeeklyS1R1 ? WR1 : na, title='Weekly R1', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(WeeklyS2R2 ? WR2 : na, title='Weekly R2', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(WeeklyS3R3 ? WR3 : na, title='Weekly R3', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(WeeklyS4R4 ? WR4 : na, title='Weekly R4', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+
+//******************MONTHLY PIVOTS**************************
+
+// Getting Monhly Pivot
+MPivot = request.security(syminfo.tickerid, 'M', pivot[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for Monthly Support levels 
+MonthlyPivotColor = MPivot != MPivot[1] ? na : color.blue
+
+//Plotting  Monthly Pivot
+plot(MonthlyPivotInclude ? MPivot : na, title=' Monthly Pivot', style=plot.style_circles, linewidth=2)
+
+// Getting  Monthly Support levels
+MS1 = request.security(syminfo.tickerid, 'M', S1[1], barmerge.gaps_off, barmerge.lookahead_on)
+MS2 = request.security(syminfo.tickerid, 'M', S2[1], barmerge.gaps_off, barmerge.lookahead_on)
+MS3 = request.security(syminfo.tickerid, 'M', S3[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Adding linebreaks for Monthly Support levels
+MS1Color = MS1 != MS1[1] ? color.green : color.green
+MS2Color = MS2 != MS2[1] ? color.green : color.green
+MS3Color = MS3 != MS3[1] ? color.green : color.green
+
+//Plotting  Monthly Support levels
+plot(MonthlyS1R1 ? MS1 : na, title='Monthly S1', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(MonthlyS2R2 ? MS2 : na, title='Monthly S2', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+plot(MonthlyS3R3 ? MS3 : na, title='Monthly S3', style=plot.style_circles, color=color.new(color.green, 0), linewidth=1)
+
+
+// Getting  Monthly Resistance levels
+MR1 = request.security(syminfo.tickerid, 'M', R1[1], barmerge.gaps_off, barmerge.lookahead_on)
+MR2 = request.security(syminfo.tickerid, 'M', R2[1], barmerge.gaps_off, barmerge.lookahead_on)
+MR3 = request.security(syminfo.tickerid, 'M', R3[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+MR1Color = MR1 != MR1[1] ? color.red : color.red
+MR2Color = MR2 != MR2[1] ? color.red : color.red
+MR3Color = MR3 != MR3[1] ? color.red : color.red
+
+
+//Plotting  Monthly Resistance levels
+plot(MonthlyS1R1 ? MR1 : na, title='Monthly R1', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(MonthlyS2R2 ? MR2 : na, title='Monthly R2', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+plot(MonthlyS3R3 ? MR3 : na, title='Monthly R3', style=plot.style_circles, color=color.new(color.red, 0), linewidth=1)
+
+
+
+// Calculate Tomorrow's CPR
+// Get High, Low and Close
+th_d = request.security(syminfo.tickerid, 'D', high, barmerge.gaps_off, barmerge.lookahead_on)
+tl_d = request.security(syminfo.tickerid, 'D', low, barmerge.gaps_off, barmerge.lookahead_on)
+tc_d = request.security(syminfo.tickerid, 'D', close, barmerge.gaps_off, barmerge.lookahead_on)
+
+// Pivot Range
+tP = (th_d + tl_d + tc_d) / 3
+tTC = (th_d + tl_d) / 2
+tBC = tP - tTC + tP
+
+// Resistance Levels
+tR3 = th_d + 2 * (tP - tl_d)
+tR2 = tP + th_d - tl_d
+tR1 = tP * 2 - tl_d
+
+// Support Levels
+tS1 = tP * 2 - th_d
+tS2 = tP - (th_d - tl_d)
+tS3 = tl_d - 2 * (th_d - tP)
+
+disp_tomorrowcpr = input(title='Show Tomorrow Pivots', defval=true)
+
+plot(disp_tomorrowcpr ? tP : na, title='Tomorrow Pivot', linewidth=1, color=color.new(color.red, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tTC : na, title='Tomorrow TC', linewidth=1, color=color.new(color.blue, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tBC : na, title='Tomorrow BC', linewidth=1, color=color.new(color.blue, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tS1 : na, title='Tomorrow S1', linewidth=1, color=color.new(color.green, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tS2 : na, title='Tomorrow S2', linewidth=1, color=color.new(color.green, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tS3 : na, title='Tomorrow S3', linewidth=1, color=color.new(color.green, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tR1 : na, title='Tomorrow R1', linewidth=1, color=color.new(color.red, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tR2 : na, title='Tomorrow R2', linewidth=1, color=color.new(color.red, 0), style=plot.style_circles)
+plot(disp_tomorrowcpr ? tR3 : na, title='Tomorrow R3', linewidth=1, color=color.new(color.red, 0), style=plot.style_circles)
+
+//*****************************INDICATORS**************************
+
+//SMA 1
+PlotSMA1 = input(title='Plot SMA 1', defval=false)
+SMALength1 = input(title='SMA Length', defval=20)
+SMASource1 = input(title='SMA Source', defval=close)
+SMAvg1 = ta.sma(SMASource1, SMALength1)
+plot(PlotSMA1 ? SMAvg1 : na, color=color.new(color.green, 0), title='SMA 1')
+
+//SMA 2
+PlotSMA2 = input(title='Plot SMA 2', defval=false)
+SMALength2 = input(title='SMA Length', defval=50)
+SMASource2 = input(title='SMA Source', defval=close)
+SMAvg2 = ta.sma(SMASource2, SMALength2)
+plot(PlotSMA2 ? SMAvg2 : na, color=color.new(color.blue, 0), title='SMA 2')
+
+//SMA 3
+PlotSMA3 = input(title='Plot SMA 3', defval=false)
+SMALength3 = input(title='SMA Length', defval=200)
+SMASource3 = input(title='SMA Source', defval=close)
+SMAvg3 = ta.sma(SMASource3, SMALength3)
+plot(PlotSMA3 ? SMAvg3 : na, color=color.new(color.blue, 0), title='SMA 3')
+
+//VWAP
+PlotVWAP = input(title='Plot VWAP?', defval=true)
+VWAPSource = input(title='VWAP Source', defval=close)
+VWAPrice = ta.vwap(VWAPSource)
+plot(PlotVWAP ? VWAPrice : na, color=#f7f7f7, linewidth=2, title='VWAP')
+
+//PDH and PDL
+pdh = request.security(syminfo.tickerid, 'D', high[1], barmerge.gaps_off, barmerge.lookahead_on)
+pdl = request.security(syminfo.tickerid, 'D', low[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+plot(pdh, 'Previous Day High', color.new(color.black, 0), linewidth=1, style=plot.style_circles)
+plot(pdl, 'Previous Day Low', color.new(color.black, 0), linewidth=1, style=plot.style_circles)
+
+//MARKET STRUCTURE
+//Description: Enhanced Zig Zag indicator that plot points on the chart whenever prices reverse by a percentage greater than a pre-chosen variable.
+
+
+
+// Hull trend
+
+tf = input.timeframe('10', title='Timeframe for HMA', options=['1', '5', '10', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'Y'])
+src = input(hl2)
+length = input(24, title='Period')
+shift = input(0, title='Offset')
+
+showcross = input(false, 'Show Buy/Sell signal')
+
+hma(_src, _length)=>
+    ta.wma((2 * ta.wma(_src, _length / 2)) - ta.wma(_src, _length), math.round(math.sqrt(_length)))
+
+hma3(_src, _length) =>
+    p = length / 2
+    ta.wma(ta.wma(close, p / 3) * 3 - ta.wma(close, p / 2) - ta.wma(close, p), p)
+
+
+a = request.security(syminfo.tickerid, tf, hma(src, length)[shift])
+b = request.security(syminfo.tickerid, tf, hma3(src, length)[shift])
+c = b > a ? #3def993a : #ff52524d
+p1 = plot(a, color=c, linewidth=1, transp=75)
+p2 = plot(b, color=c, linewidth=1, transp=75)
+fill(p1, p2, color=c, transp=25)
+crossdn = a > b and a[1] < b[1]
+crossup = b > a and b[1] < a[1]
+//plotshape(showcross and crossdn ? a : na, location=location.abovebar, style=shape.labeldown, color=color.red, size=size.tiny, text="⬇", textcolor=color.white, transp=50, offset=0)
+//plotshape(showcross and crossup ? a : na, location=location.belowbar, style=shape.labelup, color=color.green, size=size.tiny, text="⬆", textcolor=color.white, transp=50, offset=0)
+//alertcondition(showcross and crossdn ? a : na, title = 'hma long', message = 'hma: long ')
+//alertcondition(showcross and crossup ? a : na, title = 'hma short', message = 'hma: short ')
+//
+
+
+len = input(20)
+// Draw channel.
+channelType = input.string(defval='Bollinger', title='Channel Type', options=['NONE', 'Donchian', 'Bollinger', 'Envelope'])
+channelLen = input.int(14, minval=1, title='Channel Length')
+envPer = input.float(4, title='Envelope %', minval=0) / 100
+
+getChannels(src, len) =>
+    if channelType == 'Bollinger'
+        ma = ta.ema(src, len)
+        dev = ta.stdev(src, len)
+        bbUp = ma + 2 * dev
+        bbDown = ma - 2 * dev
+        [bbUp, bbDown]
+    else
+        if channelType == 'Donchian'
+            donUp = ta.highest(high[1], len)
+            donDown = ta.lowest(low[1], len)
+            [donUp, donDown]
+        else
+            if channelType == 'Envelope'
+                ma = ta.ema(src, len)
+                envUp = ma * (1 + envPer)
+                envDown = ma * (1 - envPer)
+                [envUp, envDown]
+            else
+                [na, na]
+
+[upperchannel, lowerchannel] = getChannels(src, len)
+u = plot(upperchannel, linewidth=1, color=color.new(color.black, 0), title='Band High')
+plot(math.avg(upperchannel, lowerchannel), linewidth=1, color=color.new(color.red, 0), title='Band Middle')
+lbol = plot(lowerchannel, linewidth=1, color=color.new(color.black, 0), title='Band Low')
+fill(u, lbol, transp=90)
+
+// Coloured volume candles
+
+lengthbar = input.int(13, 'length', minval=1)
+avrg = ta.sma(volume, lengthbar)
+
+vold1 = volume > avrg * 1.5 and close < open
+vold2 = volume >= avrg * 0.5 and volume <= avrg * 1.5 and close < open
+vold3 = volume < avrg * 0.5 and close < open
+
+volu1 = volume > avrg * 1.5 and close > open
+volu2 = volume >= avrg * 0.5 and volume <= avrg * 1.5 and close > open
+volu3 = volume < avrg * 0.5 and close > open
+
+
+cold1 = color.maroon
+cold2 = color.red
+cold3 = color.gray
+
+
+colu1 = color.green
+colu2 = color.lime
+colu3 = color.gray
+
+
+color = vold1 ? cold1 : vold2 ? cold2 : vold3 ? cold3 : volu1 ? colu1 : volu2 ? colu2 : volu3 ? colu3 : na
+
+barcolor(color)
+
+
+///// MU trend
+
+//indicator("Gann Fan", overlay = true, max_bars_back = 400)
+// get colors into the array
+// var color [] colors = array.from(
+// input(defval = color.red, title = "1/2", inline = "c1", group = "colors"),
+// input(defval = color.green, title = "1/3", inline = "c1", group = "colors"),
+// input(defval = #0097a7, title = "1/", inline = "c1", group = "colors"),
+// input(defval = color.olive, title = "1/8", inline = "c1", group = "colors"),
+// input(defval = color.teal, title = "2/1", inline = "c2", group = "colors"),
+// input(defval = #9598a1, title = "3/1", inline = "c2", group = "colors"),
+// input(defval = color.yellow, title = "4/1", inline = "c2", group = "colors"),
+// input(defval = #a5d6a7, title = "8/1", inline = "c2", group = "colors"),
+// input(defval = color.blue, title = "1/1", inline = "c3", group = "colors"))
+//Transparency or the bg colors
+transp = input.int(defval = 97, title = "Transparency", minval = 0, maxval = 100, tooltip = "Possible values are from 0 (not transparent) to 100 (invisible)")
+// labels
+showlabels = input.bool(defval = true, title = "Labels", inline = "labels")
+labelloc = input.int(defval = 50, title = "|  Label location", minval = 1, maxval = 300, inline = "labels")
+lstyle1i = input.string(defval = 'Solid', title = "Line Style", options = ['Solid', 'Dashed', 'Dotted'], inline = "lstyle")
+lstyle2i = input.string(defval = 'Dashed', title = "", options = ['Solid', 'Dashed', 'Dotted'], inline = "lstyle")
+loopbackprd = input.int(defval = 280, title = "Loopback Period", tooltip = "Loopback period to search Highest/Lowest Pivot Points")
+pperiod = input.int(defval = 5, title = "Pivot Period")
+
+// calculate middle line, using this line we will calculate other lines
+float l_ = ta.lowest(292)
+float h_ = ta.highest(292)
+float perc = (h_ - l_) /82
+float hh = h_ + perc * 10
+float ll = l_ - perc * 8
+float middle = (hh - ll) / 131.0
+var lstyle1 = lstyle1i == 'Solid' ? line.style_solid : lstyle1i == 'Dashed' ? line.style_dashed : line.style_dotted
+var lstyle2 = lstyle2i == 'Solid' ? line.style_solid : lstyle2i == 'Dashed' ? line.style_dashed : line.style_dotted
+// levels
+var divs = array.from(2.0, 3.0, 4.0, 8.0)
+
+// remove old pivot points
+remove_old_pivots(pval, ploc)=>
+    for x = array.size(ploc) - 1 to 0
+        if bar_index - array.get(ploc, x) > loopbackprd
+            array.pop(ploc)
+            array.pop(pval)
+            
+// get highest/lowest locations
+var pivothighs = array.new_float(0, na)
+var pivothighsloc = array.new_int(0, na)
+var pivotlows = array.new_float(0, na)
+var pivotlowsloc = array.new_int(0, na)
+ph = ta.pivothigh(pperiod, pperiod)
+pl = ta.pivotlow(pperiod, pperiod)
+if ph
+    array.unshift(pivothighsloc, bar_index - pperiod)
+    array.unshift(pivothighs, ph)
+    remove_old_pivots(pivothighs, pivothighsloc)
+if pl
+    array.unshift(pivotlowsloc, bar_index - pperiod)
+    array.unshift(pivotlows, pl)
+    remove_old_pivots(pivotlows, pivotlowsloc)
+
+l_bar_index = array.size(pivotlowsloc) > 0 ? array.get(pivotlowsloc, array.lastindexof(pivotlows, array.min(pivotlows))) : na
+h_bar_index = array.size(pivothighsloc) > 0 ? array.get(pivothighsloc, array.lastindexof(pivothighs, array.max(pivothighs))) : na
+lwest = low[bar_index - l_bar_index]
+hghest = high[bar_index - h_bar_index]
+
+// get line style
+get_style(x)=>
+    x == 1 ? l_bar_index <= h_bar_index ? lstyle1 : lstyle2 : l_bar_index > h_bar_index ? lstyle1 : lstyle2
+
+// remove old lines/labels/linefills
+remove_old_lll(lines, labels, linefills)=>
+    for x = 0 to array.size(lines) - 1
+        line.delete(array.get(lines, x))
+    for x = 0 to array.size(labels) - 1
+        label.delete(array.get(labels, x))
+    for x = 0 to array.size(linefills) - 1
+        linefill.delete(array.get(linefills, x))
+
+// get bar_index using y location and start point
+line_get_bar_index(gline, x_bar_index, yloc, mult)=>
+    ystart = line.get_price(gline, x_bar_index)
+    slope = math.abs(ystart - line.get_price(gline, x_bar_index + 1))
+    int ret = x_bar_index + math.floor((yloc - ystart) / slope) * mult
+
+// draw fan lines from lowest
+if l_bar_index > 0 and l_bar_index < bar_index
+    var uplines = array.new_line(9, na)
+    var ulinefill = array.new_linefill(8, na)
+    var labels = array.new_label(9, na)
+    remove_old_lll(uplines, labels, ulinefill)
+    
+    // draw 1/1 line, show its label and keep its y level
+    array.set(uplines, 0, line.new(x1 = l_bar_index, y1 = lwest, x2 = l_bar_index + 1, y2 = lwest + middle, extend = extend.right, color = #a5d6a7, style = get_style(1)))
+    xloc = l_bar_index + labelloc
+    yloc11 = line.get_price(array.get(uplines, 0), xloc)
+    if showlabels
+        array.set(labels, 0, label.new(x = xloc, y = yloc11, text = "1/1", textcolor = #a5d6a7, style = label.style_none))
+    
+    // draw other fan lines, labels, linefills 
+    for x = 0 to 3
+        array.set(uplines, x + 1, line.new(x1 = l_bar_index, y1 = lwest, x2 = bar_index, y2 = lwest + (line.get_price(array.get(uplines, 0), bar_index) - lwest) / array.get(divs,x), 
+                                           extend = extend.right, 
+                                           color = color.new(color.gray,75), 
+                                           style = get_style(1)))
+        array.set(ulinefill, x, linefill.new(array.get(uplines, x + 1), array.get(uplines, x), color = color.new(color.gray,90)))
+        if showlabels
+            yloc = line.get_price(array.get(uplines, x + 1), xloc)
+            array.set(labels, x + 1, label.new(x = xloc, y = yloc, text = "1/" + str.tostring(array.get(divs, x)), textcolor = color.gray, style = label.style_none))
+        
+        if x == 0
+            array.set(uplines, x + 5, line.new(x1 = l_bar_index, y1 = lwest, x2 = l_bar_index + 1, y2 = lwest + middle * array.get(divs,x), 
+                                           extend = extend.right, 
+                                           color = #20eab4e0, 
+                                           style = get_style(1)))
+        else
+            array.set(uplines, x + 5, line.new(x1 = l_bar_index, y1 = lwest, x2 = l_bar_index + 1, y2 = lwest + middle * array.get(divs,x), 
+                                           extend = extend.right, 
+                                           color = color.new(color.gray,75), 
+                                           style = get_style(1)))
+        array.set(ulinefill, x + 4, linefill.new(array.get(uplines, x + 5), array.get(uplines, x == 0 ? 0 : x + 4), color = color.new(color.gray,90)))
+        if showlabels
+            xlocc = line_get_bar_index(array.get(uplines, x + 5), l_bar_index, yloc11, 1)
+            array.set(labels, x + 5, label.new(x = xlocc, y = yloc11, text = str.tostring(array.get(divs, x)) + "/1", textcolor = color.gray, style = label.style_none))
+
+// draw fan lines from highest      
+if h_bar_index > 0 and h_bar_index < bar_index
+    var downlines = array.new_line(9, na)
+    var labels = array.new_label(9, na)
+    var dlinefill = array.new_linefill(8, na)
+    remove_old_lll(downlines, labels, dlinefill)
+    
+    // draw 1/1 line, show its label and keep its y level
+    array.set(downlines, 0, line.new(x1 = h_bar_index, y1 = hghest, x2 = h_bar_index + 1, y2 = hghest - middle, extend = extend.right, color = #a5d6a7, style = get_style(2)))
+    xloc = h_bar_index + labelloc
+    yloc11 = line.get_price(array.get(downlines, 0), xloc)
+    if showlabels
+        array.set(labels, 0, label.new(x = xloc, y = yloc11, text = "1/1", textcolor = #a5d6a7, style = label.style_none))
+
+    // draw other fan lines, labels, linefills
+    for x = 0 to 3
+        if x == 0
+            array.set(downlines, x + 1, line.new(x1 = h_bar_index, y1 = hghest, x2 = bar_index, y2 = hghest - (hghest - line.get_price(array.get(downlines, 0), bar_index)) / array.get(divs,x), 
+                                             extend = extend.right, 
+                                             color = #20eab4e0, 
+                                             style = get_style(2)))
+        else
+            array.set(downlines, x + 1, line.new(x1 = h_bar_index, y1 = hghest, x2 = bar_index, y2 = hghest - (hghest - line.get_price(array.get(downlines, 0), bar_index)) / array.get(divs,x), 
+                                             extend = extend.right, 
+                                             color = color.new(color.gray,75), 
+                                             style = get_style(2)))
+
+        array.set(dlinefill, x, linefill.new(array.get(downlines, x + 1), array.get(downlines, x), color = color.new(color.gray,90)))
+        if showlabels
+            yloc = line.get_price(array.get(downlines, x + 1), xloc)
+            array.set(labels, x + 1, label.new(x = xloc, y = yloc, text = str.tostring(array.get(divs, x)) + "/1", textcolor = color.gray, style = label.style_none))
+
+        array.set(downlines, x + 5, line.new(x1 = h_bar_index, y1 = hghest, x2 = h_bar_index + 1, y2 = hghest - middle * array.get(divs,x), 
+                                             extend = extend.right, 
+                                             color = color.new(color.gray,75), 
+                                             style = get_style(2)))
+        array.set(dlinefill, x + 4, linefill.new(array.get(downlines, x + 5), array.get(downlines, x == 0 ? 0 : x + 4), color = color.new(color.gray,90)))
+        if showlabels
+            xlocc = line_get_bar_index(array.get(downlines, x + 5), h_bar_index, yloc11, -1)
+            array.set(labels, x + 5, label.new(x = xlocc, y = yloc11, text = "1/" + str.tostring(array.get(divs, x)), textcolor = color.gray, style = label.style_none))
+
+
+    //
+
+
+//liquidity swing
+// Inputs
+swingSizeR       = input.int(10, 'Bars Right-Left', inline='brl')
+swingSizeL       = input.int(10, '-', inline='brl')
+showBoxes        = input.bool(true, 'Show Boxes', inline='aa')
+showSwingLines   = input.bool(true, 'Show Lines', inline='aa')
+showBubbles      = input.bool(true, 'Show Labels', inline='bb')
+showVol          = input.bool(true, 'Show Volume', inline='bb')
+showOId          = input.bool(true, 'Show OI Δ', inline='cc')
+extendtilfilled  = input.bool(true, 'Extend Until Fill', inline='cc')
+
+// Conditions
+hidefilled       = input.bool(false, 'Hide Filled', group='Conditions')
+voltresh = input.int(0, 'Volume >', group='Conditions')
+oitresh  = input.int(0, 'OI Δ (abs.) >',  group='Conditions')
+pnoid   = input.string('/', 'Only Swings With', options = ['Positive OI Delta', 'Negative OI Delta', '/'], group='Conditions', tooltip = "Price rising (+), open interest rising (+) then stock price will rise (+).\nPrice rising (+), open interest declining (-) then stock price will fall (-).\nPrice declining (-), open interest declining. (-)then stock price will rise (+).\nPrice declining (-), open interest rising (+) means stock price will fall (-).")
+// Appearance inputs
+showhighs        = input.bool(true, '', inline='sh', group='Appearance')
+showlows         = input.bool(true, '', inline='sl', group='Appearance')
+sellcol          = input.color(color.rgb(38, 198, 218, 0), 'Lows (Line - Label - Box)', inline = 'sh', group='Appearance')
+buycol           = input.color(color.rgb(251, 192, 45, 0), 'Highs (Line - Label - Box)', inline='sl', group='Appearance')
+sellcolB         = input.color(color.rgb(38, 198, 218, 74), '', inline='sh', group='Appearance')
+buycolB          = input.color(color.rgb(251, 192, 45, 74), '', inline = 'sl', group='Appearance')
+sellboxCol       = input.color(color.rgb(38, 198, 218, 85), '', inline = 'sh', group='Appearance')
+buyboxCol        = input.color(color.rgb(251, 192, 45, 85), '', inline='sl', group='Appearance')
+lineStyle        = input.string('Solid', 'Line Style + Width', ['Solid', 'Dashed', 'Dotted'], inline='lw', group='Appearance')
+lineWid          = input.int(1, '', inline='lw', group='Appearance')
+boxWid           = input.float(3, 'Box Width + Type', step=0.1, inline='xx', group='Appearance')
+boxStyle         = input.string('TYPE 1', '', options=['TYPE 1', 'TYPE 2'], inline='xx', group='Appearance')
+labelsize        = input.string('Size: Tiny', 'Text Style', options = ['Size: Normal','Size: Large', 'Size: Small', 'Size: Tiny', 'Size: Auto' ], inline='txt', group = 'Appearance' )
+texthalign       = input.string('Right','', options = ['Middle', 'Right', 'Left'], inline='txt', group = 'Appearance')
+lookback         = input.bool(false, '', inline='lb')
+daysBack         = input.float(150, 'Lookback (D)',inline='lb')
+// OI Data
+binance   = input.bool(true, 'Binance USDT.P', inline = 'src',  group = 'Open Interest')
+binance2  = input.bool(true, 'Binance USD.P',  inline = 'src',  group = 'Open Interest')
+binance3  = input.bool(true, 'Binance BUSD.P', inline = 'src2', group = 'Open Interest')
+bitmex    = input.bool(true, 'BitMEX USD.P',   inline = 'src2', group = 'Open Interest')
+bitmex2   = input.bool(true, 'BitMEX USDT.P', inline = 'src3', group = 'Open Interest')
+kraken    = input.bool(true, 'Kraken USD.P',   inline = 'src3', group = 'Open Interest')
+
+// Calculating inRange, used for lookback in days
+MSPD             = 24 * 60 * 60 * 1000
+lastBarDate      = timestamp(year(timenow), month(timenow), dayofmonth(timenow), hour(timenow), minute(timenow), second(timenow))
+thisBarDate      = timestamp(year, month, dayofmonth, hour, minute, second)
+daysLeft         = math.abs(math.floor((lastBarDate - thisBarDate) / MSPD))
+inRange          = lookback ? (daysLeft < daysBack) : true
+
+//Pivot calculations
+int prevHighIndex= na, int prevLowIndex= na, bool highActive= false, bool lowActive= false, bool hg= false, bool lw=false
+pivHi            = ta.pivothigh(high, swingSizeL, swingSizeR)
+pivLo            = ta.pivotlow(low, swingSizeL, swingSizeR)
+
+if not na(pivHi)
+    hg := true
+    prevHighIndex := bar_index - swingSizeR
+if not na(pivLo)
+    lw := true
+    prevLowIndex  := bar_index - swingSizeR
+
+// Getting OI data
+mex =  syminfo.basecurrency=='BTC' ? 'XBT' : string(syminfo.basecurrency)
+oid1 = nz(request.security('BINANCE' + ":" + string(syminfo.basecurrency) + 'USDT.P_OI',  timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+oid2 = nz(request.security('BINANCE' + ":" + string(syminfo.basecurrency) + 'USD.P_OI',   timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+oid3 = nz(request.security('BINANCE' + ":" + string(syminfo.basecurrency) + 'BUSD.P_OI',  timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+oid4 = nz(request.security('BITMEX'  + ":" + mex                          + 'USD.P_OI',   timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+oid5 = nz(request.security('BITMEX'  + ":" + mex                          + 'USDT.P_OI',  timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+oid6 = nz(request.security('KRAKEN'  + ":" + string(syminfo.basecurrency) + 'USD.P_OI',   timeframe.period,  close-close[1], ignore_invalid_symbol = true), 0)
+
+deltaOI   = (binance ? nz(oid1,0) : 0)   +   (binance2 ? nz(oid2,0)/close : 0)   +    (binance3 ? nz(oid3,0) : 0)    +   (bitmex ? nz(oid4,0)/close : 0)   +   (bitmex2 ? nz(oid5,0)/close : 0)   +   (kraken ? nz(oid6,0)/close : 0)
+
+
+
+
+//Volume, OI, box width
+vol         = volume[swingSizeR]
+
+oitreshcond = oitresh > 0 ? math.abs(deltaOI[swingSizeR])>oitresh : true
+voltreshcond = voltresh > 0 ? vol > voltresh : true
+oicond = pnoid=='Positive OI Delta' ? deltaOI[swingSizeR]>0 : pnoid=='Negative OI Delta' ? deltaOI[swingSizeR]<0 : true
+
+color CLEAR = color.rgb(0,0,0,100)
+boxWid1     = 0.001 * boxWid
+
+
+// Styles
+boxStyle(x) =>
+    switch x
+        'TYPE 1' => hg ? pivHi : lw ? pivLo : na
+        'TYPE 2' => hg ? pivHi * (1 - boxWid1) : lw ? pivLo * (1 + boxWid1) : na
+lineStyle(x) =>
+    switch x
+        'Solid'  => line.style_solid
+        'Dashed' => line.style_dashed
+        'Dotted' => line.style_dotted
+switchtextsize(textsize) =>
+    switch textsize
+        'Size: Normal'  => size.normal
+        'Size: Small'   => size.small
+        'Size: Tiny'    => size.tiny
+        'Size: Auto'    => size.auto
+        'Size: Large'   => size.large
+switchhalign(texthalign) =>
+    switch texthalign
+        'Middle'        => text.align_center
+        'Right'         => text.align_right
+        'Left'          => text.align_left
+
+//Swing level labels
+var levelBoxes = array.new_box(), var levelLines = array.new_line()
+if hg and inRange and showhighs and oitreshcond and voltreshcond and oicond
+    hBox    = box.new(prevHighIndex, pivHi * (1 + boxWid1), bar_index, boxStyle(boxStyle), border_color = na, bgcolor = showBoxes ? sellboxCol : CLEAR, text= (showVol ? str.tostring(vol, format.volume) : na) +' '+ (showOId ? str.tostring(deltaOI[swingSizeR], format.volume) : ''),text_halign=switchhalign(texthalign),text_valign=text.align_center,text_color=color.rgb(83, 226, 88), text_size=switchtextsize(labelsize))
+    hLine   = line.new(prevHighIndex, pivHi, bar_index, pivHi, color = showSwingLines ? sellcol : CLEAR, style=lineStyle(lineStyle), width=lineWid)
+    array.push(levelBoxes, hBox)
+    array.push(levelLines, hLine)
+if lw and inRange and showhighs and oitreshcond and voltreshcond and oicond
+    lBox    = box.new(prevLowIndex, pivLo * (1 - boxWid1), bar_index, boxStyle(boxStyle), border_color = na, bgcolor = showBoxes ? buyboxCol : CLEAR, text= (showVol ? str.tostring(vol, format.volume) : na) +' '+ (showOId ? str.tostring(deltaOI[swingSizeR], format.volume) : ''),text_halign=switchhalign(texthalign),text_valign=text.align_center,text_color=color.rgb(83, 226, 88), text_size=switchtextsize(labelsize))
+    lLine   = line.new(prevLowIndex, pivLo, bar_index, pivLo, color = showSwingLines ? buycol : CLEAR, style=lineStyle(lineStyle), width=lineWid)
+    array.push(levelBoxes, lBox)
+    array.push(levelLines, lLine)
+
+// Looping over the full array of lines and updating them, and deleting them if they have been touched
+size = array.size(levelBoxes)
+if size > 0
+    for i = 0 to size - 1
+        j = size - 1 - i
+        box = array.get(levelBoxes, j)
+        line = array.get(levelLines, j)
+        level = line.get_y2(line)
+        filled = (high >= level and low <= level)
+
+        if filled and extendtilfilled and not hidefilled
+            array.remove(levelLines, j)
+            array.remove(levelBoxes, j)
+            continue 
+
+        box.set_right(box, bar_index+1)
+        line.set_x2(line, bar_index+1)
+        if filled and hidefilled
+            array.remove(levelLines, j)
+            array.remove(levelBoxes, j)
+            line.delete(line)
+            box.delete(box)
+
+        if not filled and not extendtilfilled
+            array.remove(levelLines, j)
+            array.remove(levelBoxes, j)
+            continue 
+            box.set_right(box, bar_index[0]+4)
+            line.set_x2(line, bar_index[0]+4)
+
+
+// Deleting the oldest lines if array is too big 
+if array.size(levelBoxes) >= 500
+    int i = 0
+    while array.size(levelBoxes) >= 500
+        box = array.get(levelBoxes, i)
+        line = array.get(levelLines, i)
+        box.delete(box)
+        line.delete(line)
+        array.remove(levelBoxes, i)
+        array.remove(levelLines, i)
+        i += 1 
+        
+// Plotting circle labels
+plotshape(showhighs and showBubbles and hg and oitreshcond and voltreshcond and oicond ? high[swingSizeR] : na, style=shape.circle, location = location.absolute, offset = -swingSizeR, color=sellcolB, size = size.tiny)
+plotshape(showlows and showBubbles and lw and oitreshcond and voltreshcond and oicond ? low[swingSizeR] : na, style=shape.circle, location = location.absolute, offset = -swingSizeR, color=buycolB, size = size.tiny)
+
+
+// Range Filter
+// tS1 good for Bull Sign for entry vice versa.
+
+srcRng = tS1
+changeSrcRngSourceConst = tS1
+
+changeSrcRng = input(title='Change Source?', defval=true)
+changeSrcRngSource = input.string("tS1", "Source", ["DayPivot","DayBC","DayTC","DayS1","DayS2","DayS3","DayS4","DayR1","DayR2","DayR3","DayR4","WPivot","WS1","WS2","WS3","WR1","WR2","WR3","WR4","MPivot","MS1","MS2","MS3","MR1","MR2","MR3","tP","tTC","tBC","tR3","tR2","tR1","tS1","tS2","tS3","VWAPrice","SMASource1","SMASource2","SMASource3"])
+
+
+// Apply condition logic to assign the correct value
+if changeSrcRngSource == "DayPivot"
+    changeSrcRngSourceConst := DayPivot
+else if changeSrcRngSource == "DayBC"
+    changeSrcRngSourceConst := DayBC
+else if changeSrcRngSource == "DayTC"
+    changeSrcRngSourceConst := DayTC
+else if changeSrcRngSource == "DayS1"
+    changeSrcRngSourceConst := DayS1
+else if changeSrcRngSource == "DayS2"
+    changeSrcRngSourceConst := DayS2
+else if changeSrcRngSource == "DayS3"
+    changeSrcRngSourceConst := DayS3
+else if changeSrcRngSource == "DayS4"
+    changeSrcRngSourceConst := DayS4
+else if changeSrcRngSource == "DayR1"
+    changeSrcRngSourceConst := DayR1
+else if changeSrcRngSource == "DayR2"
+    changeSrcRngSourceConst := DayR2
+else if changeSrcRngSource == "DayR3"
+    changeSrcRngSourceConst := DayR3
+else if changeSrcRngSource == "DayR4"
+    changeSrcRngSourceConst := DayR4
+else if changeSrcRngSource == "WPivot"
+    changeSrcRngSourceConst := WPivot
+else if changeSrcRngSource == "WS1"
+    changeSrcRngSourceConst := WS1
+else if changeSrcRngSource == "WS2"
+    changeSrcRngSourceConst := WS2
+else if changeSrcRngSource == "WS3"
+    changeSrcRngSourceConst := WS3
+else if changeSrcRngSource == "WR1"
+    changeSrcRngSourceConst := WR1
+else if changeSrcRngSource == "WR2"
+    changeSrcRngSourceConst := WR2
+else if changeSrcRngSource == "WR3"
+    changeSrcRngSourceConst := WR3
+else if changeSrcRngSource == "WR4"
+    changeSrcRngSourceConst := WR4
+else if changeSrcRngSource == "MPivot"
+    changeSrcRngSourceConst := MPivot
+else if changeSrcRngSource == "MS1"
+    changeSrcRngSourceConst := MS1
+else if changeSrcRngSource == "MS2"
+    changeSrcRngSourceConst := MS2
+else if changeSrcRngSource == "MS3"
+    changeSrcRngSourceConst := MS3
+else if changeSrcRngSource == "MR1"
+    changeSrcRngSourceConst := MR1
+else if changeSrcRngSource == "MR2"
+    changeSrcRngSourceConst := MR2
+else if changeSrcRngSource == "MR3"
+    changeSrcRngSourceConst := MR3
+else if changeSrcRngSource == "tP"
+    changeSrcRngSourceConst := tP
+else if changeSrcRngSource == "tTC"
+    changeSrcRngSourceConst := tTC
+else if changeSrcRngSource == "tBC"
+    changeSrcRngSourceConst := tBC
+else if changeSrcRngSource == "tR3"
+    changeSrcRngSourceConst := tR3
+else if changeSrcRngSource == "tR2"
+    changeSrcRngSourceConst := tR2
+else if changeSrcRngSource == "tR1"
+    changeSrcRngSourceConst := tR1
+else if changeSrcRngSource == "tS1"
+    changeSrcRngSourceConst := tS1
+else if changeSrcRngSource == "tS2"
+    changeSrcRngSourceConst := tS2
+else if changeSrcRngSource == "tS3"
+    changeSrcRngSourceConst := tS3
+else if changeSrcRngSource == "VWAPrice"
+    changeSrcRngSourceConst := VWAPrice
+else if changeSrcRngSource == "SMASource1"
+    changeSrcRngSourceConst := SMASource1
+else if changeSrcRngSource == "SMASource2"
+    changeSrcRngSourceConst := SMASource2
+else if changeSrcRngSource == "SMASource3"
+    changeSrcRngSourceConst := SMASource3
+
+if changeSrcRng
+    srcRng := changeSrcRngSourceConst
+else
+    srcRng := tS1 //tR1 or sR1 are the tomorrow range price for a perfect pivot point
+
+// Sampling Period
+// Settings for 5min chart, BTCUSDC. For Other coin, change the paremeters
+
+per = input.int(defval=192, minval=1, title='Sampling Period')
+
+// Range Multiplier
+
+mult = input.float(defval=9.0, minval=0.1, title='Range Multiplier')
+
+// Smooth Average Range
+
+smoothrng(x, t, m) =>
+    wper = t * 2 - 1
+    avrng = ta.ema(math.abs(x - x[1]), t)
+    smoothrng = ta.ema(avrng, wper) * m
+    smoothrng
+smrng = smoothrng(srcRng, per, mult)
+
+// Range Filter
+
+rngfilt(x, r) =>
+    rngfilt = x
+    rngfilt := x > nz(rngfilt[1]) ? x - r < nz(rngfilt[1]) ? nz(rngfilt[1]) : x - r : x + r > nz(rngfilt[1]) ? nz(rngfilt[1]) : x + r
+    rngfilt
+filt = rngfilt(srcRng, smrng)
+
+// Filter Direction
+
+upward = 0.0
+upward := filt > filt[1] ? nz(upward[1]) + 1 : filt < filt[1] ? 0 : nz(upward[1])
+downward = 0.0
+downward := filt < filt[1] ? nz(downward[1]) + 1 : filt > filt[1] ? 0 : nz(downward[1])
+
+// Target Bands
+
+hband = filt + smrng
+lband = filt - smrng
+
+
+//WAVETREND PLOT ONE
+channel_lkbk = input.int(defval=8, title='Channel Lookback', group='Primary Wavetrend')
+average_lkbk = input.int(defval=13, title='Average Lookback', group='Primary Wavetrend')
+wt_1_ma_lkbk = input.int(defval=4, title='Signal Line Lookback', group='Primary Wavetrend')
+
+esa = ta.ema(srcRng, channel_lkbk)
+d = ta.ema(math.abs(srcRng - esa), channel_lkbk)
+ci = (srcRng - esa) / (0.015 * d)
+tci = ta.ema(ci, average_lkbk)
+wt_1 = tci
+wt_1_ma = ta.sma(wt_1, wt_1_ma_lkbk)
+
+//WAVETREND PLOT TWO
+wt2_plot = input.bool(defval=true, title='', group='Secondary Wavetrend')
+channel2_lkbk = input.int(defval=13, title='Channel Lookback', group='Secondary Wavetrend')
+average2_lkbk = input.int(defval=34, title='Average Lookback', group='Secondary Wavetrend')
+
+esa2 = ta.ema(srcRng, channel2_lkbk)
+d2 = ta.ema(math.abs(srcRng - esa2), channel2_lkbk)
+ci2 = (srcRng - esa2) / (0.015 * d2)
+tci2 = ta.ema(ci2, average2_lkbk)
+wt_2 = tci2
+
+//COLOR INPUTS
+wt_2_up = input.color(color.new(#00bcd4, 0), title='Bullish Wavetrend', inline='wt 2 color', group='Secondary Wavetrend')
+wt_2_down = input.color(color.new(#e91e63, 0), title='Bearish Wavetrend', inline='wt 2 color', group='Secondary Wavetrend')
+wt_2_color = color.from_gradient(wt_2, -60, 60, wt_2_down, wt_2_up)
+
+//COLOR INPUTS
+wt_1_up = input.color(color.new(#ff9800, 0), title='Bullish Wavetrend', inline='wt 1 color', group='Primary Wavetrend')
+wt_1_down = input.color(color.new(#2962ff, 0), title='Bearish Wavetrend', inline='wt 1 color', group='Primary Wavetrend')
+wt_1_color = color.from_gradient(wt_1, -80, 80, wt_1_down, wt_1_up)
+
+
+
+////WAVETREND - RANGE EXTREMES
+i_high_extreme = input.string(defval='60', options=['0', '10', '20', '30', '40', '50', '60', '70', '80'], title='High Extreme', group='Bar Colors', tooltip='Numbers located along the far right edge of the indicator. Inputs only affect a difference in the \'OB/OS\' candle color selection. You might want to adjust these if an asset is trending strongly in one direction and you don\'t expect pullbacks in the oscillator to reach all the way back to what would normally be considered overbought or oversold. Does not actually change anything visibly on the indicator itself.')
+i_low_extreme = input.string(defval='-60', options=['0', '-10', '-20', '-30', '-40', '-50', '-60', '-70', '-80'], title='Low Extreme', group='Bar Colors')
+
+os_80 = wt_1 <= -80
+os_70 = wt_1 <= -70
+os_60 = wt_1 <= -60
+os_50 = wt_1 <= -50
+os_40 = wt_1 <= -40
+os_30 = wt_1 <= -30
+os_20 = wt_1 <= -20
+os_10 = wt_1 <= -10
+os_0 = wt_1 <= 0
+ob_0 = wt_1 >= 0
+ob_10 = wt_1 >= 10
+ob_20 = wt_1 >= 20
+ob_30 = wt_1 >= 30
+ob_40 = wt_1 >= 40
+ob_50 = wt_1 >= 50
+ob_60 = wt_1 >= 60
+ob_70 = wt_1 >= 70
+ob_80 = wt_1 >= 80
+
+low_extreme = i_low_extreme == '0' ? os_0 : i_low_extreme == '-10' ? os_10 : i_low_extreme == '-20' ? os_20 : i_low_extreme == '-30' ? os_30 : i_low_extreme == '-40' ? os_40 : i_low_extreme == '-50' ? os_50 : i_low_extreme == '-60' ? os_60 : i_low_extreme == '-70' ? os_70 : i_low_extreme == '-80' ? os_80 : na
+high_extreme = i_high_extreme == '0' ? ob_0 : i_high_extreme == '10' ? ob_10 : i_high_extreme == '20' ? ob_20 : i_high_extreme == '30' ? ob_30 : i_high_extreme == '40' ? ob_40 : i_high_extreme == '50' ? ob_50 : i_high_extreme == '60' ? ob_60 : i_high_extreme == '70' ? ob_70 : i_high_extreme == '80' ? ob_80 : na
+
+
+// Colors
+
+filtcolor = upward > 0 ? color.lime : downward > 0 ? color.red : color.orange
+//barcolor = srcRng > filt and srcRng > srcRng[1] and upward > 0 ? color.lime : srcRng > filt and srcRng < srcRng[1] and upward > 0 ? color.green : srcRng < filt and srcRng < srcRng[1] and downward > 0 ? color.red : srcRng < filt and srcRng > srcRng[1] and downward > 0 ? color.maroon : color.orange
+
+////BAR COLOR - INPUTS
+bar_color = input.bool(defval=true, title='', group='Bar Colors')
+i_bc_selection = input.string(defval='WT 1 Gradient', options=['WT 1 Gradient', 'WT 1 Centerline', 'WT 1 Extremes', 'WT 2 Gradient', 'WT 2 Centerline'], title='How would you like them colored?', group='Bar Colors', tooltip='Either gradient selection will color candles in a gradient between high and low zones on the oscillator. OB/OS simply colors candles based on where the oscillator is relative to the user-defined high and low zones below.')
+
+
+////BAR COLOR - INPUTS AND VARIABLES
+bc_1_up = input.color(color.new(#ff9800, 0), title='WT 1 Up', group='Bar Colors')
+bc_1_down = input.color(color.new(#2962ff, 0), title='WT 1 Down', group='Bar Colors')
+bc_1_neut = input.color(color.new(#787b86, 0), title='WT 1 Neutral', group='Bar Colors')
+
+bc_1_color = color.from_gradient(wt_1, -60, 60, bc_1_down, bc_1_up)
+bc_2_color = wt_1 > 0 ? bc_1_up : bc_1_down
+bc_3_color = high_extreme ? bc_1_up : low_extreme ? bc_1_down : bc_1_neut
+
+
+bc_2_up = input.color(color.new(#00bcd4, 0), title='WT 2 Up', group='Bar Colors')
+bc_2_down = input.color(color.new(#e91e63, 0), title='WT 2 Down', group='Bar Colors')
+
+bc_4_color = color.from_gradient(wt_2, -60, 60, bc_2_down, bc_2_up)
+bc_5_color = wt_2 > 0 ? bc_2_up : bc_2_down
+
+bc_selection = i_bc_selection == 'WT 1 Gradient' ? bc_1_color : i_bc_selection == 'WT 1 Centerline' ? bc_2_color : i_bc_selection == 'WT 1 Extremes' ? bc_3_color : i_bc_selection == 'WT 2 Gradient' ? bc_4_color : i_bc_selection == 'WT 2 Centerline' ? bc_5_color : na
+
+
+filtplot = plot(filt, color=filtcolor, linewidth=3, title='Range Filter')
+
+// Target
+
+// hbandplot = plot(hband, color=color.new(color.aqua, 100), title='High Target')
+// lbandplot = plot(lband, color=color.new(color.fuchsia, 100), title='Low Target')
+
+// Fills
+
+// fill(hbandplot, filtplot, color=color.new(color.aqua, 90), title='High Target Range')
+// fill(lbandplot, filtplot, color=color.new(color.fuchsia, 90), title='Low Target Range')
+
+// Bar Color
+
+barcolor(bar_color ? bc_selection : na, title='Colored Bars')
+//barcolor(barcolor)
+
+// Break Outs
+
+longCond = bool(na)
+shortCond = bool(na)
+longCond := srcRng > filt and srcRng > srcRng[1] and upward > 0 or srcRng > filt and srcRng < srcRng[1] and upward > 0
+shortCond := srcRng < filt and srcRng < srcRng[1] and downward > 0 or srcRng < filt and srcRng > srcRng[1] and downward > 0
+
+CondIni = 0
+CondIni := longCond ? 1 : shortCond ? -1 : CondIni[1]
+longCondition = longCond and CondIni[1] == -1
+shortCondition = shortCond and CondIni[1] == 1
+
+//Alerts
+
+plotshape(longCondition, title='Buy Signal', text='BUY', textcolor=color.new(color.white, 0), style=shape.labelup, size=size.normal, location=location.belowbar, color=color.new(color.green, 0))
+plotshape(shortCondition, title='Sell Signal', text='SELL', textcolor=color.new(color.white, 0), style=shape.labeldown, size=size.normal, location=location.abovebar, color=color.new(color.red, 0))
+
+alertcondition(longCondition, title='Buy Alert', message='BUY')
+alertcondition(longCondition, title='Buy Alert', message='BUY')
+alertcondition(longCondition, title='Buy Alert', message='BUY')
+alertcondition(shortCondition, title='Sell Alert', message='SELL')
+
+//@function Displays text passed to `txt` when called.
+debugLabel(txt, lblColor) => label.new(
+     bar_index, high, text = txt, color = lblColor, textcolor = color.white,
+     style = label.style_label_lower_right, size = size.tiny
+ )
+
+// Generate a long market order with a `color.green` label on `longCondition`.
+if longCondition
+    //debugLabel("Long market order created", color.green)
+    strategy.entry("L", strategy.long, comment=" ")
+// Otherwise, generate a short market order with a `color.red` label on `shortCondition`.
+else if shortCondition
+    //debugLabel("Short market order created", color.red)
+    strategy.entry("S", strategy.short, comment=" ")
+
